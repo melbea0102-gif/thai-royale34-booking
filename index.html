@@ -4,6 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thai Royale Spa - Book Your Appointment</title>
+    
+    <!--
+    ============================================================================
+    EMAIL SETUP INSTRUCTIONS - IMPORTANT!
+    ============================================================================
+    
+    To enable automatic email notifications, follow these steps:
+    
+    1. Go to: https://web3forms.com
+    2. Click "Get Started Free" (no credit card needed)
+    3. Enter your email: trsavida34th@myyahoo.com
+    4. Click "Create Access Key"
+    5. Copy the Access Key (looks like: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6)
+    6. In this HTML file, find BOTH instances of:
+       access_key: "YOUR_WEB3FORMS_KEY"
+       (search for "YOUR_WEB3FORMS_KEY" - there are 2 places)
+    7. Replace "YOUR_WEB3FORMS_KEY" with your actual key
+    8. Save and re-upload to GitHub/Netlify
+    
+    Example:
+    access_key: "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
+    
+    After setup, you'll receive booking notifications at: trsavida34th@myyahoo.com
+    Customers will receive confirmation at their email address.
+    
+    Web3Forms Free Plan includes:
+    - 250 emails per month (plenty for a spa)
+    - No credit card required
+    - No expiration
+    
+    ============================================================================
+    -->
+    
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -1292,13 +1325,17 @@
                 <strong id="confirmationNumber">TR-2026-XXXX</strong>
             </div>
             <p style="font-size: 0.95rem; line-height: 1.6;">
-                A confirmation email with payment instructions has been sent to your registered email address.
-                <br><br>
-                <strong>Note:</strong> Email notifications will open in your default email client. If emails don't send automatically, please contact us directly at:
+                Confirmation emails have been sent to:
                 <br>
-                📧 <strong>trsavida34th@myyahoo.com</strong>
+                <strong style="color: var(--gold);">✓ trsavida34th@myyahoo.com</strong> (Spa notification)
+                <br>
+                <strong style="color: var(--gold);">✓ Your email address</strong> (Booking confirmation)
+                <br><br>
+                If you don't receive the email within 5 minutes, please contact us:
                 <br>
                 📱 0927-834-1053 / 0961-603-3538
+                <br>
+                📧 trsavida34thbgc@gmail.com
                 <br><br>
                 We look forward to serving you!
             </p>
@@ -1506,11 +1543,9 @@
             return '';
         }
 
-        function sendBookingEmail(details) {
-            // Prepare email content
-            const subject = `New Booking - ${details.confirmationNumber} - ${details.customerName}`;
-            
-            const body = `
+        async function sendBookingEmail(details) {
+            // Prepare email content for spa owner
+            const spaEmailMessage = `
 NEW BOOKING RESERVATION
 ========================
 
@@ -1550,18 +1585,44 @@ ${details.paymentDetails}
 
 ========================
 Thai Royale Spa - Avida 34th St. BGC
-`.trim();
+            `;
 
-            // Create mailto link
-            const mailtoLink = `mailto:trsavida34th@myyahoo.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            
-            // Open email client (this will open in user's default email client)
-            // Note: In a production environment, you would use a backend service to send emails
-            window.open(mailtoLink, '_blank');
-            
-            // Also send confirmation to customer
-            const customerSubject = `Booking Confirmation - ${details.confirmationNumber}`;
-            const customerBody = `
+            // Send to spa email
+            try {
+                const response = await fetch('https://api.web3forms.com/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        access_key: '2f177712-b4ee-4d8e-b4d6-dca0c5a21dfe',
+                        subject: `New Booking - ${details.confirmationNumber} - ${details.customerName}`,
+                        from_name: "Thai Royale Booking System",
+                        email: details.customerEmail,
+                        to: 'trsavida34th@myyahoo.com',
+                        message: spaEmailMessage
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('Email sent successfully to spa');
+                    
+                    // Send confirmation to customer
+                    await fetch('https://api.web3forms.com/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            access_key: '2f177712-b4ee-4d8e-b4d6-dca0c5a21dfe',
+                            subject: `Booking Confirmation - ${details.confirmationNumber}`,
+                            from_name: "Thai Royale Spa",
+                            to: details.customerEmail,
+                            message: `
 Dear ${details.customerName},
 
 Thank you for booking with Thai Royale Spa!
@@ -1582,7 +1643,7 @@ Thai Royale Spa - Avida 34th St. BGC Branch
 R12 G/F Avida Towers 34th St. cor 11th St. BGC Taguig
 
 Payment Method: ${details.paymentMethod}
-${details.paymentMethod === 'GCASH' ? 'A payment request will be sent to your GCash number shortly.' : ''}
+${details.paymentMethod === 'GCASH' ? 'Please send payment to GCash: 0908 655 1539' : ''}
 ${details.paymentMethod === 'BANK' ? 'Bank transfer instructions will be sent in a separate email.' : ''}
 ${details.paymentMethod === 'CARD' ? 'Your card will be charged upon arrival.' : ''}
 
@@ -1594,14 +1655,17 @@ We look forward to serving you!
 
 Best regards,
 Thai Royale Spa Team
-`.trim();
-
-            const customerMailto = `mailto:${details.customerEmail}?subject=${encodeURIComponent(customerSubject)}&body=${encodeURIComponent(customerBody)}`;
-            
-            // Store booking details in console for reference
-            console.log('Booking Details:', details);
-            console.log('Spa Email:', 'trsavida34th@myyahoo.com');
-            console.log('Customer Email:', details.customerEmail);
+                            `
+                        })
+                    });
+                } else {
+                    console.error('Email sending failed:', result);
+                    alert('Booking confirmed but email notification failed. Please contact us at 0927-834-1053');
+                }
+            } catch (error) {
+                console.error('Error sending email:', error);
+                alert('Booking confirmed! Please save your confirmation number: ' + details.confirmationNumber + '\n\nContact us at 0927-834-1053 to confirm your booking.');
+            }
         }
 
         function closeModal() {
